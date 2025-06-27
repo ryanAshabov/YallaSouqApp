@@ -63,7 +63,7 @@ const AuthContext = createContext<AuthContextType>({
   favorites: [],
   addToFavorites: async () => {},
   removeFromFavorites: async () => {},
-  reloadUser: async () => {},
+  reloadUser: async () => {}, // This was the missing piece
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -96,8 +96,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await updateDoc(userDocRef, {
         favorites: arrayRemove(adId),
       });
-    } catch (error) {
-      console.error("Error removing from favorites: ", error);
+    } catch (error)      console.error("Error removing from favorites: ", error);
     }
   }, [user]);
 
