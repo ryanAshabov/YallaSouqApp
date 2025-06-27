@@ -9,10 +9,10 @@ import 'react-native-reanimated';
 import { AuthProvider } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-// This is the ideal place for this setup
+// Updated notification handler to use the current API
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true, // Use shouldShowBanner instead of the deprecated shouldShowAlert
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
