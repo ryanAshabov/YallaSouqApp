@@ -54,6 +54,7 @@ interface AuthContextType {
   favorites: string[];
   addToFavorites: (adId: string) => Promise<void>;
   removeFromFavorites: (adId: string) => Promise<void>;
+  reloadUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -62,12 +63,19 @@ const AuthContext = createContext<AuthContextType>({
   favorites: [],
   addToFavorites: async () => {},
   removeFromFavorites: async () => {},
+  reloadUser: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [favorites, setFavorites] = useState<string[]>([]);
+
+  const reloadUser = useCallback(async () => {
+    await auth.currentUser?.reload();
+    const freshUser = auth.currentUser;
+    setUser(freshUser);
+  }, []);
 
   const addToFavorites = useCallback(async (adId: string) => {
     if (!user) return;
@@ -147,6 +155,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     favorites,
     addToFavorites,
     removeFromFavorites,
+    reloadUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</Auth.Provider>;
