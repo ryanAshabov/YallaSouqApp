@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ActivityInd
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { updateProfile } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, auth } from '@/firebaseConfig';
 import * as ImagePicker from 'expo-image-picker';
@@ -14,6 +14,7 @@ export default function EditProfileScreen() {
     const router = useRouter();
     
     const [displayName, setDisplayName] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -21,6 +22,16 @@ export default function EditProfileScreen() {
         if (user) {
             setDisplayName(user.displayName || '');
             setImageUri(user.photoURL);
+            
+            // Fetch phone number from Firestore
+            const fetchUserData = async () => {
+                const userDocRef = doc(db, 'users', user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    setPhoneNumber(userDocSnap.data().phoneNumber || '');
+                }
+            };
+            fetchUserData();
         }
     }, [user]);
 
@@ -44,7 +55,6 @@ export default function EditProfileScreen() {
         try {
             let photoURL = user.photoURL;
 
-            // Upload new image if one was selected
             if (imageUri && imageUri !== user.photoURL) {
                 const response = await fetch(imageUri);
                 const blob = await response.blob();
@@ -53,20 +63,18 @@ export default function EditProfileScreen() {
                 photoURL = await getDownloadURL(storageRef);
             }
 
-            // Update Firebase Auth profile
             await updateProfile(user, {
                 displayName: displayName,
                 photoURL: photoURL,
             });
 
-            // Update user document in Firestore
             const userDocRef = doc(db, 'users', user.uid);
             await updateDoc(userDocRef, {
                 displayName: displayName,
                 photoURL: photoURL,
+                phoneNumber: phoneNumber, // Save phone number
             });
 
-            // Reload user data in context
             if (reloadUser) {
               await reloadUser();
             }
@@ -117,6 +125,15 @@ export default function EditProfileScreen() {
                     placeholder="Enter your name"
                 />
 
+                <Text style={styles.label}>Phone Number</Text>
+                <TextInput
+                    style={styles.input}
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    placeholder="e.g., +970591234567"
+                    keyboardType="phone-pad"
+                />
+
                 <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges} disabled={isLoading}>
                     {isLoading ? (
                         <ActivityIndicator color="#fff" />
@@ -162,11 +179,11 @@ const styles = StyleSheet.create({
     },
     content: {
         padding: 20,
-        alignItems: 'center',
     },
     imageContainer: {
         marginBottom: 30,
         position: 'relative',
+        alignSelf: 'center',
     },
     profileImage: {
         width: 120,
