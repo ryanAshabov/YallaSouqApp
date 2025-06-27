@@ -5,11 +5,16 @@ import { useRouter } from 'expo-router';
 import { CATEGORIES } from '@/constants/categories';
 import { db } from '@/firebaseConfig';
 import { collection, query, orderBy, limit, onSnapshot, DocumentData } from 'firebase/firestore';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function HomeScreen() {
     const router = useRouter();
+    const colorScheme = useColorScheme();
     const [recentAds, setRecentAds] = useState<DocumentData[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const themeColors = Colors[colorScheme ?? 'light'];
 
     useEffect(() => {
         const adsCollection = collection(db, 'ads');
@@ -33,10 +38,15 @@ export default function HomeScreen() {
 
     const handleCategoryPress = (categoryName: string) => {
         const urlFriendlyName = categoryName.replace(/ /g, '-');
-        router.push(`/category/${urlFriendlyName}`);
+        // Updated route to keep the tab bar visible
+        router.push({
+            pathname: '/(tabs)/category/[category]',
+            params: { category: urlFriendlyName },
+        });
     };
 
     const handleAdPress = (adId: string) => {
+        // This will push the ad details screen over the tabs, which is usually the desired behavior
         router.push(`/ad/${adId}`);
     };
 
@@ -44,15 +54,15 @@ export default function HomeScreen() {
 
     const renderRecentAds = () => {
         if (loading) {
-            return <ActivityIndicator size="large" color="#6A1B9A" style={{ marginTop: 20 }} />;
+            return <ActivityIndicator size="large" color={themeColors.primary} style={{ marginTop: 20 }} />;
         }
 
         if (recentAds.length === 0) {
             return (
                 <View style={styles.noAdsContainer}>
                     <Ionicons name="eye-off-outline" size={50} color="#CCC" />
-                    <Text style={styles.noAdsText}>No ads have been posted yet.</Text>
-                    <Text style={styles.noAdsSubText}>Be the first to post one!</Text>
+                    <Text style={[styles.noAdsText, { color: themeColors.text }]}>No ads have been posted yet.</Text>
+                    <Text style={[styles.noAdsSubText, { color: themeColors.icon }]}>Be the first to post one!</Text>
                 </View>
             );
         }
@@ -60,11 +70,11 @@ export default function HomeScreen() {
         return (
             <View style={styles.recentAdsContainer}>
                 {recentAds.map((ad) => (
-                    <TouchableOpacity key={ad.id} style={styles.adCard} onPress={() => handleAdPress(ad.id)}>
+                    <TouchableOpacity key={ad.id} style={[styles.adCard, { backgroundColor: themeColors.background }]} onPress={() => handleAdPress(ad.id)}>
                         <Image source={{ uri: ad.imageUrls[0] }} style={styles.adImage} />
                         <View style={styles.adCardContent}>
-                           <Text style={styles.adTitle} numberOfLines={2}>{ad.title}</Text>
-                           <Text style={styles.adPrice}>₪{ad.price.toLocaleString()}</Text>
+                           <Text style={[styles.adTitle, { color: themeColors.text }]} numberOfLines={2}>{ad.title}</Text>
+                           <Text style={[styles.adPrice, { color: themeColors.primary }]}>₪{ad.price.toLocaleString()}</Text>
                         </View>
                     </TouchableOpacity>
                 ))}
@@ -73,18 +83,18 @@ export default function HomeScreen() {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.header}>
+        <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]}>
+            <View style={[styles.header, { backgroundColor: themeColors.primary }]}>
                 <Text style={styles.headerTitle}>Yalla Souq</Text>
                 <Text style={styles.headerSubtitle}>Buy and sell anything, anywhere</Text>
             </View>
 
-            <View style={styles.searchContainer}>
-                <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
-                <TextInput placeholder="What are you looking for?" style={styles.searchInput} />
+            <View style={[styles.searchContainer, { backgroundColor: themeColors.background }]}>
+                <Ionicons name="search" size={20} color={themeColors.icon} style={styles.searchIcon} />
+                <TextInput placeholder="What are you looking for?" style={[styles.searchInput, { color: themeColors.text }]} placeholderTextColor={themeColors.icon} />
             </View>
 
-            <Text style={styles.sectionTitle}>Browse Categories</Text>
+            <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Browse Categories</Text>
             <View style={styles.categoriesContainer}>
                 {homeScreenCategories.map((category) => (
                     <TouchableOpacity 
@@ -95,12 +105,12 @@ export default function HomeScreen() {
                         <View style={[styles.categoryIconContainer, { backgroundColor: category.color }]}>
                             <Ionicons name={category.icon as any} size={28} color="#fff" />
                         </View>
-                        <Text style={styles.categoryText}>{category.name}</Text>
+                        <Text style={[styles.categoryText, { color: themeColors.text }]}>{category.name}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
-            <Text style={styles.sectionTitle}>Recent Ads</Text>
+            <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Recent Ads</Text>
             {renderRecentAds()}
         </ScrollView>
     );
@@ -109,10 +119,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     header: {
-        backgroundColor: '#6A1B9A',
         padding: 20,
         paddingTop: 60,
         alignItems: 'center',
@@ -124,12 +132,11 @@ const styles = StyleSheet.create({
     },
     headerSubtitle: {
         fontSize: 16,
-        color: '#E0E0E0',
+        color: 'rgba(255,255,255,0.8)',
     },
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
         borderRadius: 25,
         marginHorizontal: 15,
         marginTop: -25,
@@ -147,6 +154,7 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         height: 50,
+        fontSize: 16,
     },
     sectionTitle: {
         fontSize: 20,
@@ -187,12 +195,10 @@ const styles = StyleSheet.create({
     noAdsText: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#555',
         marginTop: 10,
     },
     noAdsSubText: {
         fontSize: 14,
-        color: '#888',
         marginTop: 5,
     },
     recentAdsContainer: {
@@ -203,7 +209,6 @@ const styles = StyleSheet.create({
     },
     adCard: {
         width: '48%',
-        backgroundColor: '#FFF',
         borderRadius: 8,
         marginBottom: 15,
         shadowColor: '#000',
@@ -216,7 +221,6 @@ const styles = StyleSheet.create({
     adImage: {
         height: 120,
         width: '100%',
-        backgroundColor: '#EEE',
     },
     adCardContent: {
         padding: 10,
@@ -228,7 +232,6 @@ const styles = StyleSheet.create({
         height: 36, // Ensure consistent height
     },
     adPrice: {
-        color: '#6A1B9A',
         fontWeight: 'bold',
         fontSize: 16,
     },

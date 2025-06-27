@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/firebaseConfig';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/firebaseConfig';
 
 export default function SignUpScreen() {
     const router = useRouter();
+    const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSignUp = async () => {
-        if (!email || !password || !confirmPassword) {
+        if (!fullName || !email || !password || !confirmPassword) {
             Alert.alert('Missing Fields', 'Please fill in all fields.');
             return;
         }
@@ -24,10 +26,31 @@ export default function SignUpScreen() {
 
         setLoading(true);
         try {
-            await createUserWithEmailAndPassword(auth, email, password);
-            // On successful sign-up, the AuthProvider will handle the state change.
-            // We can navigate the user back to the profile screen, which will now show the logged-in state.
+            // 1. Create user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // 2. Update the user's profile with their full name
+            await updateProfile(user, {
+                displayName: fullName,
+            });
+
+            // 3. Create a corresponding document in the 'users' collection in Firestore
+            const userDocRef = doc(db, 'users', user.uid);
+            await setDoc(userDocRef, {
+                displayName: fullName,
+                email: email,
+                createdAt: serverTimestamp(),
+                favorites: [],
+                // pushToken will be added by the AuthProvider later
+            });
+
+            // Manually trigger a reload of the user to ensure the latest data (incl. displayName) is available
+            await user.reload();
+            
+            // On successful sign-up, navigate to the profile tab
             router.replace('/(tabs)/profile');
+
         } catch (error: any) {
             let errorMessage = 'An error occurred during sign-up.';
             if (error.code === 'auth/email-already-in-use') {
@@ -54,6 +77,13 @@ export default function SignUpScreen() {
             
             <TextInput
                 style={styles.input}
+                placeholder="Full Name"
+                value={fullName}
+                onChangeText={setFullName}
+                autoCapitalize="words"
+            />
+            <TextInput
+                style={styles.input}
                 placeholder="Email Address"
                 value={email}
                 onChangeText={setEmail}
@@ -76,7 +106,7 @@ export default function SignUpScreen() {
             />
 
             <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp} disabled={loading}>
-                <Text style={styles.signUpButtonText}>{loading ? 'Creating Account...' : 'Create Account'}</Text>
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.signUpButtonText}>Create Account</Text>}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => router.replace('/(auth)/sign-in')}>
@@ -119,7 +149,7 @@ const styles = StyleSheet.create({
         borderColor: '#EEE',
     },
     signUpButton: {
-        backgroundColor: '#1DB954',
+        backgroundColor: '#4285F4',
         padding: 20,
         borderRadius: 10,
         alignItems: 'center',
@@ -137,7 +167,7 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     switchLink: {
-        color: '#1DB954',
+        color: '#4285F4',
         fontWeight: 'bold',
     },
 });
