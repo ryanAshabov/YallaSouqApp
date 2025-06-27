@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -29,7 +29,6 @@ async function registerForPushNotificationsAsync() {
       console.log('Failed to get push token for push notification!');
       return;
     }
-    // This is the Expo Push Token
     token = (await Notifications.getExpoPushTokenAsync()).data;
     console.log('Expo Push Token:', token);
   } else {
@@ -52,44 +51,102 @@ async function registerForPushNotificationsAsync() {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  favorites: string[];
+  addToFavorites: (adId: string) => Promise<void>;
+  removeFromFavorites: (adId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
+  favorites: [],
+  addToFavorites: async () => {},
+  removeFromFavorites: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  const addToFavorites = useCallback(async (adId: string) => {
+    if (!user) return;
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      await updateDoc(userDocRef, {
+        favorites: arrayUnion(adId),
+      });
+    } catch (error) {
+      console.error("Error adding to favorites: ", error);
+    }
+  }, [user]);
+
+  const removeFromFavorites = useCallback(async (adId: string) => {
+    if (!user) return;
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      await updateDoc(userDocRef, {
+        favorites: arrayRemove(adId),
+      });
+    } catch (error) {
+      console.error("Error removing from favorites: ", error);
+    }
+  }, [user]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setIsLoading(false);
 
       if (currentUser) {
-        // User is signed in, get and save the push token
+        // User is signed in, handle push tokens and favorites
         const pushToken = await registerForPushNotificationsAsync();
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        
+        // Ensure user document exists
+        const userDoc = await getDoc(userDocRef);
+        if (!userDoc.exists()) {
+          await setDoc(userDocRef, {
+            email: currentUser.email,
+            createdAt: serverTimestamp(),
+            favorites: [], // Initialize favorites
+          });
+        }
+
+        // Update push token
         if (pushToken) {
-          const userDocRef = doc(db, 'users', currentUser.uid);
-          // Save the token and the last time it was updated
-          await setDoc(userDocRef, { 
-            email: currentUser.email, 
+          await updateDoc(userDocRef, {
             pushToken: pushToken,
             updatedAt: serverTimestamp(),
-            createdAt: serverTimestamp(), // To track when the user was created
-           }, { merge: true }); // Use merge to not overwrite existing user data
+          });
         }
+      } else {
+        // User is signed out
+        setFavorites([]);
       }
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAuth();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      const userDocRef = doc(db, 'users', user.uid);
+      const unsubscribeFavorites = onSnapshot(userDocRef, (doc) => {
+        if (doc.exists()) {
+          setFavorites(doc.data().favorites || []);
+        }
+      });
+      return () => unsubscribeFavorites();
+    }
+  }, [user]);
 
   const value = {
     user,
     isLoading,
+    favorites,
+    addToFavorites,
+    removeFromFavorites,
   };
 
   return <AuthContext.Provider value={value}>{children}</Auth.Provider>;

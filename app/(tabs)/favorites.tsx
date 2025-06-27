@@ -1,40 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { collection, query, orderBy, onSnapshot, DocumentData } from 'firebase/firestore';
+import { doc, getDocs, collection, query, where, DocumentData } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
 import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function FavoritesScreen() {
-    const { user } = useAuth();
+    const { user, favorites: favoriteIds } = useAuth();
     const router = useRouter();
-    const [favorites, setFavorites] = useState<DocumentData[]>([]);
+    const [favoriteAds, setFavoriteAds] = useState<DocumentData[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (!user) {
+    const fetchFavoriteAds = useCallback(async () => {
+        if (!user || favoriteIds.length === 0) {
+            setFavoriteAds([]);
             setLoading(false);
             return;
         }
 
-        const favoritesCollection = collection(db, 'users', user.uid, 'favorites');
-        const q = query(favoritesCollection, orderBy('favoritedAt', 'desc'));
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const favsData = snapshot.docs.map(doc => ({
+        setLoading(true);
+        try {
+            const adsRef = collection(db, 'ads');
+            // Firestore 'in' query is limited to 10 items. For more, you'd need multiple queries.
+            // For this app, we'll assume a user won't have more than 10-30 favorites for simplicity.
+            const q = query(adsRef, where('__name__', 'in', favoriteIds));
+            const querySnapshot = await getDocs(q);
+            const adsData = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
-            setFavorites(favsData);
+            setFavoriteAds(adsData);
+        } catch (error) {
+            console.error("Error fetching favorite ads: ", error);
+        } finally {
             setLoading(false);
-        }, (error) => {
-            console.error("Error fetching favorites: ", error);
-            setLoading(false);
-        });
+        }
+    }, [user, favoriteIds]);
 
-        return () => unsubscribe();
-    }, [user]);
+    useEffect(() => {
+        fetchFavoriteAds();
+    }, [fetchFavoriteAds]);
 
     if (loading) {
         return (
@@ -66,7 +72,7 @@ export default function FavoritesScreen() {
         );
     }
 
-    if (favorites.length === 0) {
+    if (favoriteAds.length === 0) {
         return (
             <View style={styles.container}>
                 <View style={styles.header}>
@@ -84,9 +90,9 @@ export default function FavoritesScreen() {
     const renderFavoriteItem = ({ item }: { item: DocumentData }) => (
         <TouchableOpacity 
             style={styles.adCard} 
-            onPress={() => router.push(`/ad/${item.adId}`)}
+            onPress={() => router.push(`/ad/${item.id}`)}
         >
-            <Image source={{ uri: item.imageUrl }} style={styles.adImage} />
+            <Image source={{ uri: item.imageUrls[0] }} style={styles.adImage} />
             <View style={styles.adCardContent}>
                <Text style={styles.adTitle} numberOfLines={2}>{item.title}</Text>
                <Text style={styles.adPrice}>₪{item.price.toLocaleString()}</Text>
@@ -100,11 +106,13 @@ export default function FavoritesScreen() {
                 <Text style={styles.headerTitle}>My Favorites</Text>
             </View>
             <FlatList
-                data={favorites}
+                data={favoriteAds}
                 renderItem={renderFavoriteItem}
                 keyExtractor={item => item.id}
                 numColumns={2}
                 contentContainerStyle={styles.listContainer}
+                onRefresh={fetchFavoriteAds}
+                refreshing={loading}
             />
         </View>
     );

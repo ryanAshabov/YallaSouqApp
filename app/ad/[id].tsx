@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, Image, ActivityIndicator, TouchableOpacity, Linking, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, getDoc, setDoc, deleteDoc, collection, query, where, getDocs, addDoc, serverTimestamp, DocumentData, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp, DocumentData, Timestamp } from 'firebase/firestore';
 import { db } from '@/firebaseConfig';
 import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,15 +35,16 @@ interface Chat extends ChatDocumentData {
 export default function AdDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, favorites, addToFavorites, removeFromFavorites } = useAuth();
 
     const [ad, setAd] = useState<Ad | null>(null);
     const [seller, setSeller] = useState<DocumentData | null>(null);
     const [loading, setLoading] = useState(true);
     const [isMyAd, setIsMyAd] = useState(false);
     
-    const [isFavorited, setIsFavorited] = useState(false);
     const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+
+    const isFavorited = ad ? favorites.includes(ad.id) : false;
 
     useEffect(() => {
         const fetchAdAndSeller = async () => {
@@ -76,16 +77,6 @@ export default function AdDetailsScreen() {
         fetchAdAndSeller();
     }, [id, user]);
 
-    useEffect(() => {
-        if (!user || !ad) return;
-        const checkFavorite = async () => {
-            const favoriteDocRef = doc(db, 'users', user.uid, 'favorites', ad.id);
-            const docSnap = await getDoc(favoriteDocRef);
-            setIsFavorited(docSnap.exists());
-        };
-        checkFavorite();
-    }, [user, ad]);
-
     const handleToggleFavorite = async () => {
         if (!user || !ad) {
              Alert.alert("Login Required", "Please sign in to save favorites.", [
@@ -95,14 +86,11 @@ export default function AdDetailsScreen() {
             return;
         }
         setIsFavoriteLoading(true);
-        const favoriteDocRef = doc(db, 'users', user.uid, 'favorites', ad.id);
         try {
             if (isFavorited) {
-                await deleteDoc(favoriteDocRef);
-                setIsFavorited(false);
+                await removeFromFavorites(ad.id);
             } else {
-                await setDoc(favoriteDocRef, { adId: ad.id, title: ad.title, price: ad.price, imageUrl: ad.imageUrls[0], favoritedAt: serverTimestamp() });
-                setIsFavorited(true);
+                await addToFavorites(ad.id);
             }
         } catch (error) {
             console.error("Error toggling favorite: ", error);
