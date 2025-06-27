@@ -46,7 +46,8 @@ exports.sendPushNotification = (0, firestore_1.onDocumentCreated)("chats/{chatId
         console.log(`Invalid push token for user ${receiverId}`);
         return;
     }
-    const senderName = messageData.user.name || "A user";
+    // Get sender's name from the chat document
+    const senderName = chatData.participantNames[senderId] || "A user";
     const messageText = messageData.text;
     // Construct the notification message
     const notification = {

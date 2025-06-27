@@ -51,7 +51,8 @@ export const sendPushNotification = onDocumentCreated("chats/{chatId}/messages/{
         return;
     }
 
-    const senderName = messageData.user.name || "A user";
+    // Get sender's name from the chat document
+    const senderName = chatData.participantNames[senderId] || "A user";
     const messageText = messageData.text;
 
     // Construct the notification message
