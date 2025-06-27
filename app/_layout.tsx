@@ -9,6 +9,15 @@ import 'react-native-reanimated';
 import { AuthProvider } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
+// This is the ideal place for this setup
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
@@ -17,17 +26,18 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    // This listener is fired whenever a user taps on or interacts with a notification (works when app is foregrounded, backgrounded, or killed)
-    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+    // Listener for notification tap
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
       const { chatId, adTitle } = response.notification.request.content.data as { chatId?: string, adTitle?: string };
 
       if (chatId && adTitle) {
-        // Navigate to the chat screen
         router.push(`/chat/${chatId}?adTitle=${encodeURIComponent(adTitle)}`);
       }
     });
 
-    return () => subscription.remove();
+    return () => {
+      responseSubscription.remove();
+    };
   }, [router]);
 
   if (!loaded) {

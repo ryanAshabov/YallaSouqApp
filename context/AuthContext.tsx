@@ -7,15 +7,6 @@ import * as Notifications from 'expo-notifications';
 
 import { auth, db } from '../firebaseConfig';
 
-// --- Notifications Setup ---
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
-
 async function registerForPushNotificationsAsync() {
   let token;
   if (Device.isDevice) {
@@ -47,7 +38,6 @@ async function registerForPushNotificationsAsync() {
   return token;
 }
 
-// --- Auth Context ---
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -63,7 +53,7 @@ const AuthContext = createContext<AuthContextType>({
   favorites: [],
   addToFavorites: async () => {},
   removeFromFavorites: async () => {},
-  reloadUser: async () => {}, // This was the missing piece
+  reloadUser: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -96,7 +86,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await updateDoc(userDocRef, {
         favorites: arrayRemove(adId),
       });
-    } catch (error)      console.error("Error removing from favorites: ", error);
+    } catch (error) {
+      console.error("Error removing from favorites: ", error);
     }
   }, [user]);
 
@@ -106,21 +97,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(false);
 
       if (currentUser) {
-        // User is signed in, handle push tokens and favorites
         const pushToken = await registerForPushNotificationsAsync();
         const userDocRef = doc(db, 'users', currentUser.uid);
         
-        // Ensure user document exists
         const userDoc = await getDoc(userDocRef);
         if (!userDoc.exists()) {
           await setDoc(userDocRef, {
             email: currentUser.email,
             createdAt: serverTimestamp(),
-            favorites: [], // Initialize favorites
+            favorites: [],
           });
         }
 
-        // Update push token
         if (pushToken) {
           await updateDoc(userDocRef, {
             pushToken: pushToken,
@@ -128,7 +116,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           });
         }
       } else {
-        // User is signed out
         setFavorites([]);
       }
     });
@@ -157,7 +144,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     reloadUser,
   };
 
-  return <AuthContext.Provider value={value}>{children}</Auth.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
