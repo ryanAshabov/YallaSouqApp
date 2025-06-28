@@ -121,7 +121,7 @@ export default function PostAdScreen() {
         return (
             <View style={styles.centered}>
                 <Text style={styles.loginPromptText}>Please log in to post an ad.</Text>
-                <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/(auth)/sign-in')}>
+                <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/auth/sign-in')}>
                     <Text style={styles.loginButtonText}>Sign In</Text>
                 </TouchableOpacity>
             </View>

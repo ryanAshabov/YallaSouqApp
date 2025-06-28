@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 
-import { auth, db } from '../firebaseConfig';
+import { firebaseAuth, db } from '../firebaseConfig';
 
 // --- Helper Functions ---
 
@@ -81,10 +81,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
    * Reloads the current user's data from Firebase Auth.
    */
   const reloadUser = useCallback(async () => {
-    const currentUser = auth.currentUser;
+    const currentUser = firebaseAuth.currentUser;
     if (currentUser) {
       await currentUser.reload();
-      setUser(auth.currentUser);
+      setUser(firebaseAuth.currentUser);
     }
   }, []);
 
@@ -122,7 +122,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
    * Manages user session and Firestore user document synchronization.
    */
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (currentUser) => {
       setUser(currentUser);
       
       if (currentUser) {

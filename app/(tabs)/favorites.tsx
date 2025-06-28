@@ -64,7 +64,7 @@ export default function FavoritesScreen() {
                 <View style={styles.centered}>
                     <Ionicons name="heart-dislike-outline" size={60} color="#CCC" />
                     <Text style={styles.infoText}>Please log in to see your favorites.</Text>
-                    <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/(auth)/sign-in')}>
+                    <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/auth/sign-in')}>
                         <Text style={styles.loginButtonText}>Sign In</Text>
                     </TouchableOpacity>
                 </View>

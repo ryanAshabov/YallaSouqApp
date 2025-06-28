@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/firebaseConfig';
+import { firebaseAuth } from '@/firebaseConfig';
 
 export default function SignInScreen() {
     const router = useRouter();
@@ -19,7 +19,7 @@ export default function SignInScreen() {
 
         setLoading(true);
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            await signInWithEmailAndPassword(firebaseAuth, email, password);
             // On successful sign-in, the AuthProvider will detect the change
             // and the user will be redirected automatically or the UI will update.
             // We can explicitly navigate back or to the home screen.
@@ -67,7 +67,7 @@ export default function SignInScreen() {
                 <Text style={styles.signInButtonText}>{loading ? 'Signing In...' : 'Sign In'}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => router.replace('/(auth)/sign-up')}>
+            <TouchableOpacity onPress={() => router.replace('/auth/sign-up')}>
                 <Text style={styles.switchText}>Don't have an account? <Text style={styles.switchLink}>Sign Up</Text></Text>
             </TouchableOpacity>
         </View>

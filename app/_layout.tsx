@@ -12,10 +12,10 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 // Updated notification handler to use the current API
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: true, // Use shouldShowBanner instead of the deprecated shouldShowAlert
+    shouldShowBanner: true, // Correct, non-deprecated property
+    shouldShowList: true,   // Correct, non-deprecated property
     shouldPlaySound: true,
     shouldSetBadge: true,
-    shouldShowList: true,
   }),
 });
 
@@ -50,11 +50,14 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="profile-edit" options={{ headerShown: false }} />
           <Stack.Screen name="category/[category]" options={{ headerShown: false }} />
           <Stack.Screen name="ad/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="my-ads" options={{ headerShown: false }} />
           <Stack.Screen name="ad-edit/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="chat/[chatId]" options={{ headerShown: false }} />
+          <Stack.Screen name="user/[userId]" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />

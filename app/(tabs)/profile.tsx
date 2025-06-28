@@ -2,7 +2,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
-import { auth } from '@/firebaseConfig';
+import { firebaseAuth } from '@/firebaseConfig';
 import { signOut } from 'firebase/auth';
 
 export default function ProfileScreen() {
@@ -11,7 +11,7 @@ export default function ProfileScreen() {
 
     const handleSignOut = async () => {
         try {
-            await signOut(auth);
+            await signOut(firebaseAuth);
         } catch (error) {
             console.error('Error signing out: ', error);
         }
@@ -34,7 +34,7 @@ export default function ProfileScreen() {
                 <View style={styles.loggedInContainer}>
                     <View style={styles.userInfoSection}>
                         <Image 
-                            source={user.photoURL ? { uri: user.photoURL } : require('@/assets/images/avatar.png')} 
+                            source={user.photoURL ? { uri: user.photoURL } : require('../../assets/images/icon.png')} 
                             style={styles.avatar}
                         />
                         <Text style={styles.userName}>{user.displayName || 'No name set'}</Text>
@@ -88,10 +88,10 @@ export default function ProfileScreen() {
                         <Ionicons name="person-circle-outline" size={100} color="#E0E0E0" />
                         <Text style={styles.loggedOutTitle}>Your Profile</Text>
                         <Text style={styles.loggedOutSubtitle}>Sign in to manage your ads and view your profile.</Text>
-                        <TouchableOpacity style={styles.signInButton} onPress={() => router.push('/(auth)/sign-in')}>
+                        <TouchableOpacity style={styles.signInButton} onPress={() => router.push('/auth/sign-in')}>
                             <Text style={styles.signInButtonText}>Sign In</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.createAccountButton} onPress={() => router.push('/(auth)/sign-up')}>
+                        <TouchableOpacity style={styles.createAccountButton} onPress={() => router.push('/auth/sign-up')}>
                             <Text style={styles.createAccountButtonText}>Create New Account</Text>
                         </TouchableOpacity>
                     </View>

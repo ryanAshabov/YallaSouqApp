@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { collection, query, where, orderBy, onSnapshot, DocumentData } from 'firebase/firestore';
-import { db, auth } from '@/firebaseConfig';
+import { db, firebaseAuth } from '@/firebaseConfig';
 import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -53,7 +53,7 @@ export default function MessagesScreen() {
         return (
             <View style={styles.centered}>
                 <Text style={styles.infoText}>Please log in to see your messages.</Text>
-                <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/(auth)/sign-in')}>
+                <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/auth/sign-in')}>
                     <Text style={styles.loginButtonText}>Sign In</Text>
                 </TouchableOpacity>
             </View>

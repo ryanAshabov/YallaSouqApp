@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { GiftedChat, IMessage } from 'react-native-gifted-chat';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db, auth } from '@/firebaseConfig';
+import { db, firebaseAuth } from '@/firebaseConfig';
 import { useAuth } from '@/context/AuthContext';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,7 +56,7 @@ export default function ChatScreen() {
         return (
             <View style={styles.centered}>
                 <Text>Please log in to view messages.</Text>
-                <TouchableOpacity onPress={() => router.push('/(auth)/sign-in')}>
+                <TouchableOpacity onPress={() => router.push('/auth/sign-in')}>
                     <Text>Login</Text>
                 </TouchableOpacity>
             </View>

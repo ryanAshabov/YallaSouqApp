@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/firebaseConfig';
+import { firebaseAuth, db } from '@/firebaseConfig';
 
 export default function SignUpScreen() {
     const router = useRouter();
@@ -27,7 +27,7 @@ export default function SignUpScreen() {
         setLoading(true);
         try {
             // 1. Create user in Firebase Auth
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
             const user = userCredential.user;
 
             // 2. Update the user's profile with their full name
@@ -109,7 +109,7 @@ export default function SignUpScreen() {
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.signUpButtonText}>Create Account</Text>}
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => router.replace('/(auth)/sign-in')}>
+            <TouchableOpacity onPress={() => router.replace('/auth/sign-in')}>
                 <Text style={styles.switchText}>Already have an account? <Text style={styles.switchLink}>Sign In</Text></Text>
             </TouchableOpacity>
         </View>
